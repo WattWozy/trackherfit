@@ -3,6 +3,7 @@
 import { Client, Account, Databases, ID, Query } from 'appwrite';
 import { AW_ENDPOINT, AW_PROJECT_ID, AW_DB_ID, COL_TEMPLATES, COL_SESSIONS, COL_SETS } from './config';
 import type { Exercise, Feel, SessionSet, StoredSet, WorkoutTemplate } from '@/types';
+import { CLASS_LIBRARY } from './defaults';
 
 // ─── CLIENT ──────────────────────────────────────────────────────────────────
 let _client: Client | null = null;
@@ -58,7 +59,7 @@ function docToTemplate(doc: Record<string, unknown>): WorkoutTemplate {
       sets:   sets[i],
       reps:   reps[i],
       weight: weights[i],
-      ...(reps[i] === 0 ? { type: 'class' as const } : {}),
+      ...(CLASS_LIBRARY.includes(name) ? { type: 'class' as const } : {}),
     })),
   };
 }
@@ -89,7 +90,7 @@ export async function saveTemplate(
     name,
     exerciseNames: exercises.map(e => e.name),
     sets:    exercises.map(e => e.sets),
-    reps:    exercises.map(e => e.reps),
+    reps:    exercises.map(e => e.reps === 0 ? 1 : e.reps),
     weights: exercises.map(e => e.weight),
   };
   try {

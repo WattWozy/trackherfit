@@ -260,7 +260,7 @@ interface WorkoutContextValue {
   activeTemplateId: string | null;
   activeTemplateName: string;
   selectTemplate: (id: string) => Promise<void>;
-  saveAsNewTemplate: (name: string) => Promise<void>;
+  createNewTemplate: (name: string) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
   renameTemplate: (id: string, name: string) => Promise<void>;
 }
@@ -590,21 +590,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.$id]);
 
-  const saveAsNewTemplate = useCallback(async (name: string) => {
-    // Snapshot the current routine with a deep copy so the new template's exercise
-    // array is independent of anything the caller or a stale timer might mutate.
-    const routine = state.routine.map(e => ({ ...e }));
-    // Cancel any pending save for the old active template.  "Save as new" means
-    // the user intends these exercises to live in the new template only; the old
-    // template should stay at whatever it last committed to Appwrite.
-    if (templateSaveTimer.current) { clearTimeout(templateSaveTimer.current); templateSaveTimer.current = null; }
-    pendingRoutineRef.current = null;
-    const newId = await saveTemplate(user.$id, routine, name);
-    const t: WorkoutTemplate = { id: newId, name, exercises: routine };
+  const createNewTemplate = useCallback(async (name: string) => {
+    await flushPendingTemplateSave();
+    const newId = await saveTemplate(user.$id, [], name);
+    const t: WorkoutTemplate = { id: newId, name, exercises: [] };
     applyTemplates([...templatesRef.current, t]);
     applyActiveId(newId);
+    dispatch({ type: 'INIT', routine: [] });
+    saveRoutine([]);
+    sessionIdRef.current = null;
+    setSessionId(null);
+    sessionCreateRef.current = null;
+    sessionSetsRef.current = [];
+    clearPersistedProgress();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.routine, user.$id]);
+  }, [user.$id]);
 
   const renameTemplate = useCallback(async (id: string, name: string) => {
     const t = templatesRef.current.find(t => t.id === id);
@@ -660,7 +660,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       activeTemplateId,
       activeTemplateName,
       selectTemplate,
-      saveAsNewTemplate,
+      createNewTemplate,
       deleteTemplate,
       renameTemplate,
     }}>

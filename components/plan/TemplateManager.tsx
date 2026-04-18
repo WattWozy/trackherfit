@@ -6,13 +6,12 @@ import { useWorkout } from '@/context/WorkoutContext';
 interface TemplateManagerProps {
   visible: boolean;
   onClose: () => void;
-  openNew?: boolean;
 }
 
-export function TemplateManager({ visible, onClose, openNew }: TemplateManagerProps) {
+export function TemplateManager({ visible, onClose }: TemplateManagerProps) {
   const {
     templates, activeTemplateId,
-    selectTemplate, saveAsNewTemplate, deleteTemplate, renameTemplate,
+    selectTemplate, createNewTemplate, deleteTemplate, renameTemplate,
   } = useWorkout();
 
   // Which template is being renamed (id → draft name)
@@ -35,17 +34,15 @@ export function TemplateManager({ visible, onClose, openNew }: TemplateManagerPr
     if (showNew && newInputRef.current) newInputRef.current.focus();
   }, [showNew]);
 
-  // Reset internal state when sheet closes; auto-open new form when requested.
+  // Reset internal state when sheet closes.
   useEffect(() => {
     if (!visible) {
       setRenamingId(null);
       setShowNew(false);
       setNewName('');
       setSaved(false);
-    } else if (openNew) {
-      setShowNew(true);
     }
-  }, [visible, openNew]);
+  }, [visible]);
 
   function handleLoad(id: string) {
     selectTemplate(id);
@@ -72,7 +69,7 @@ export function TemplateManager({ visible, onClose, openNew }: TemplateManagerPr
     const name = newName.trim();
     if (!name || saving || saved) return;
     setSaving(true);
-    await saveAsNewTemplate(name);
+    await createNewTemplate(name);
     setSaving(false);
     setSaved(true);
     setTimeout(() => {
@@ -324,7 +321,7 @@ export function TemplateManager({ visible, onClose, openNew }: TemplateManagerPr
                 }}
               >
                 <span style={{ fontSize: 22, lineHeight: 1 }}>+</span>
-                Save current as new
+                New Plan
               </button>
             )}
           </div>
