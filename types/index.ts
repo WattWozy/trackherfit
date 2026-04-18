@@ -58,3 +58,5 @@ export interface HistoryEntry {
   sets: SessionSet[];
   feel: Feel | '';
 }
+
+export type CyclePhase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';

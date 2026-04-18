@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useWorkout } from '@/context/WorkoutContext';
+import { useCycle } from '@/context/CycleContext';
+import { phaseLabel, phaseColor, CYCLE_PHASES } from '@/lib/cycle';
+import { exerciseId } from '@/lib/appwrite';
 import { PlanItem } from './PlanItem';
 import { ExerciseSearch } from './ExerciseSearch';
 import { TemplateManager } from './TemplateManager';
@@ -12,10 +15,17 @@ interface PlanPanelProps {
 }
 
 export function PlanPanel({ onShowToast, planReady }: PlanPanelProps) {
-  const { state, removeExercise, reorderRoutine, activeTemplateName, activeTemplateId, templates } = useWorkout();
+  const { state, removeExercise, reorderRoutine, addExercise, activeTemplateName, activeTemplateId, templates } = useWorkout();
+  const { phase, setPhase, recommendedExercises, recommendedClasses } = useCycle();
+
+  function advancePhase() {
+    const idx = CYCLE_PHASES.indexOf(phase);
+    setPhase(CYCLE_PHASES[(idx + 1) % CYCLE_PHASES.length]);
+  }
   const [searchOpen, setSearchOpen] = useState(false);
   const [templateManagerOpen, setTemplateManagerOpen] = useState(false);
   const [openNewOnManager, setOpenNewOnManager] = useState(false);
+  const [cycleCardExpanded, setCycleCardExpanded] = useState(false);
 
   // Track the exercise-ID baseline when the active template is loaded/switched.
   // Changes to weights/sets/reps auto-save to the active template and don't count.
@@ -82,29 +92,97 @@ export function PlanPanel({ onShowToast, planReady }: PlanPanelProps) {
             </>
           ) : null}
         </div>
-        <button
-          onClick={() => openManager(hasExerciseChanges)}
-          style={{
-            background: 'none', border: 'none', padding: 0,
-            cursor: 'pointer',
-            fontFamily: "'Nunito', sans-serif",
-            fontSize: 10,
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            color: hasExerciseChanges ? '#f472b6' : '#888',
-            transition: 'color 0.2s',
-            display: 'flex', alignItems: 'center', gap: 5,
-          }}
-        >
-          {hasExerciseChanges ? (
-            <>save as new <span style={{ fontSize: 13, lineHeight: 1 }}>+</span></>
-          ) : (
-            <>← swipe to today</>
-          )}
-        </button>
+        {hasExerciseChanges ? (
+          <button
+            onClick={() => openManager(true)}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              cursor: 'pointer',
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: '#f472b6',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            save as new <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+          </button>
+        ) : (
+          <button
+            onClick={advancePhase}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: phaseColor(phase), flexShrink: 0 }} />
+            <span style={{
+              fontFamily: "'Nunito', sans-serif",
+              fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: '#f0f0f0',
+            }}>
+              {phaseLabel(phase)}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px' }}>
+        {/* Cycle phase recommendation card */}
+        <div style={{
+          marginBottom: 12,
+          borderLeft: `3px solid ${phaseColor(phase)}`,
+          background: '#1a1a1a',
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}>
+          <button
+            onClick={() => setCycleCardExpanded(e => !e)}
+            style={{
+              width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: '#f0f0f0', fontWeight: 600 }}>
+              Recommended for {phaseLabel(phase)}
+            </span>
+            <span style={{ color: '#888', fontSize: 12 }}>{cycleCardExpanded ? '▲' : '▼'}</span>
+          </button>
+          {cycleCardExpanded && (
+            <div style={{ padding: '0 14px 12px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {recommendedExercises.map(name => (
+                <button
+                  key={name}
+                  onClick={() => { addExercise({ id: exerciseId(name), name, sets: 3, reps: 12, weight: 0 }); onShowToast(`${name} added`); }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 20,
+                    border: `1px solid ${phaseColor(phase)}`,
+                    background: 'transparent', color: '#f0f0f0',
+                    fontFamily: "'Nunito', sans-serif", fontSize: 12, cursor: 'pointer',
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+              {recommendedClasses.map(name => (
+                <button
+                  key={name}
+                  onClick={() => { addExercise({ id: exerciseId(name), name, sets: 1, reps: 0, weight: 0, type: 'class' }); onShowToast(`${name} added`); }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 20,
+                    border: `1px solid ${phaseColor(phase)}`,
+                    background: 'transparent', color: '#aaa',
+                    fontFamily: "'Nunito', sans-serif", fontSize: 12, cursor: 'pointer',
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {state.routine.map((ex, idx) => (
           <PlanItem
             key={ex.id}

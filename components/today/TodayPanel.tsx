@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useWorkout } from '@/context/WorkoutContext';
+import { useCycle } from '@/context/CycleContext';
+import { phaseLabel, phaseColor } from '@/lib/cycle';
 import { ProgressBar } from './ProgressBar';
 import { ExerciseCard } from './ExerciseCard';
 import { FeelOverlay } from './FeelOverlay';
@@ -20,6 +22,7 @@ interface TodayPanelProps {
 
 export function TodayPanel({ onShowToast, planReady }: TodayPanelProps) {
   const { state, dispatch, handleDone, handleSkip, handleSetFeel, isWorkoutComplete, isLastSetOfExercise, sessionCompletedToday } = useWorkout();
+  const { phase } = useCycle();
   const isDone = isWorkoutComplete || sessionCompletedToday;
   const [showFeel, setShowFeel] = useState(false);
   const [showClassDone, setShowClassDone] = useState(false);
@@ -101,6 +104,13 @@ export function TodayPanel({ onShowToast, planReady }: TodayPanelProps) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: 3, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '52px 24px 0' }}>
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: phaseColor(phase), flexShrink: 0 }} />
+        <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: '#aaa' }}>
+          {phaseLabel(phase)}
+        </span>
+      </div>
+
       <ProgressBar completed={state.completedSets} total={state.totalSets} />
 
       {/* Exercise card area */}
