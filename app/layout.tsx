@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Brogress',
+  title: 'trackher',
   description: 'Zero-friction gym progress tracker',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Brogress',
+    title: 'trackher',
   },
 };
 
