@@ -10,7 +10,6 @@ import { FeelOverlay } from './FeelOverlay';
 import { RestTimerModal } from './RestTimerModal';
 import { WorkoutDoneOverlay } from './WorkoutDoneOverlay';
 import { ClassDoneModal } from './ClassDoneModal';
-import { QueuedStrip } from './QueuedStrip';
 import type { Feel } from '@/types';
 
 const REST_DURATIONS = [60, 90, 120, 180] as const;
@@ -96,12 +95,6 @@ export function TodayPanel({ onShowToast, planReady }: TodayPanelProps) {
     if (restDuration) setShowRest(true);
   }, [currentEx, handleDone, handleSetFeel, dispatch, restDuration]);
 
-  const onReinject = useCallback((idx: number) => {
-    const name = state.skipped[idx]?.name;
-    dispatch({ type: 'REINJECT_SKIPPED', idx });
-    if (name) onShowToast(`${name} moved up`);
-  }, [dispatch, state.skipped, onShowToast]);
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: 3, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '52px 24px 0' }}>
@@ -165,7 +158,6 @@ export function TodayPanel({ onShowToast, planReady }: TodayPanelProps) {
       {/* Queued strip + action buttons — hidden until plan is ready, hidden when workout is complete */}
       {planReady && !isDone && (
         <>
-          <QueuedStrip onReinject={onReinject} />
           <div style={{ padding: '0 24px 36px', display: 'flex', gap: 12, alignItems: 'stretch' }}>
             {/* Rest timer toggle */}
             <button

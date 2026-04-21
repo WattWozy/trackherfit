@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(node:*)",
-      "Bash(xargs -I{} sed -i 's/#f5a623/#f472b6/g' \"{}\")"
+      "Bash(xargs -I{} sed -i 's/#f5a623/#f472b6/g' \"{}\")",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx next *)"
     ]
   }
 }
