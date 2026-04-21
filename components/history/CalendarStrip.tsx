@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { HistoryDate } from '@/types';
+import type { CyclePhase, HistoryDate } from '@/types';
+import { phaseColor } from '@/lib/cycle';
 
 interface CalendarStripProps {
   historyDates: HistoryDate[];
@@ -12,8 +13,8 @@ interface CalendarStripProps {
 const DAY_NAMES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
 export function CalendarStrip({ historyDates, selectedDate, onSelectDate }: CalendarStripProps) {
-  const sessionDates = new Set(historyDates.map(h => h.date));
-  const days: { date: string; dayName: string; dayNum: number; hasSession: boolean }[] = [];
+  const sessionMap = new Map<string, CyclePhase | undefined>(historyDates.map(h => [h.date, h.cyclePhase]));
+  const days: { date: string; dayName: string; dayNum: number; hasSession: boolean; cyclePhase?: CyclePhase }[] = [];
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +32,8 @@ export function CalendarStrip({ historyDates, selectedDate, onSelectDate }: Cale
       date: dateStr,
       dayName: DAY_NAMES[d.getDay()],
       dayNum: d.getDate(),
-      hasSession: sessionDates.has(dateStr),
+      hasSession: sessionMap.has(dateStr),
+      cyclePhase: sessionMap.get(dateStr),
     });
   }
 
@@ -73,14 +75,14 @@ export function CalendarStrip({ historyDates, selectedDate, onSelectDate }: Cale
           <div style={{
             fontFamily: "'Raleway', sans-serif",
             fontSize: 20, fontWeight: 700,
-            color: d.hasSession ? '#f472b6' : '#f0f0f0',
+            color: d.hasSession ? (d.cyclePhase ? phaseColor(d.cyclePhase) : '#f472b6') : '#f0f0f0',
           }}>
             {d.dayNum}
           </div>
           <div style={{
             width: 4, height: 4,
             borderRadius: '50%',
-            background: d.hasSession ? '#f472b6' : '#444',
+            background: d.hasSession ? (d.cyclePhase ? phaseColor(d.cyclePhase) : '#f472b6') : '#444',
           }} />
         </div>
       ))}

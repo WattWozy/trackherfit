@@ -2,7 +2,7 @@
 
 import { Client, Account, Databases, ID, Query } from 'appwrite';
 import { AW_ENDPOINT, AW_PROJECT_ID, AW_DB_ID, COL_TEMPLATES, COL_SESSIONS, COL_SETS } from './config';
-import type { Exercise, Feel, SessionSet, StoredSet, WorkoutTemplate } from '@/types';
+import type { CyclePhase, Exercise, Feel, SessionSet, StoredSet, WorkoutTemplate } from '@/types';
 import { CLASS_LIBRARY } from './defaults';
 
 // ─── CLIENT ──────────────────────────────────────────────────────────────────
@@ -118,12 +118,13 @@ export async function deleteTemplate(templateId: string): Promise<void> {
 
 // ─── SESSIONS ─────────────────────────────────────────────────────────────────
 
-export async function createSession(userId: string, templateName: string): Promise<string> {
+export async function createSession(userId: string, templateName: string, cyclePhase?: CyclePhase): Promise<string> {
   const doc = await getDb().createDocument(AW_DB_ID, COL_SESSIONS, ID.unique(), {
     userId,
     templateName,
     date:      new Date().toISOString().slice(0, 10),
     startedAt: new Date().toISOString(),
+    ...(cyclePhase ? { cyclePhase } : {}),
   });
   return doc.$id;
 }
@@ -231,16 +232,20 @@ export async function loadRecentSets(userId: string, sessionLimit = 15): Promise
 }
 
 
-export async function loadSessionDates(userId: string): Promise<{ sessionId: string; date: string }[]> {
+export async function loadSessionDates(userId: string): Promise<{ sessionId: string; date: string; cyclePhase?: CyclePhase }[]> {
   try {
     const res = await getDb().listDocuments(AW_DB_ID, COL_SESSIONS, [
       Query.equal('userId', userId),
       Query.isNotNull('completedAt'),
       Query.orderDesc('date'),
       Query.limit(60),
-      Query.select(['$id', 'date']),
+      Query.select(['$id', 'date', 'cyclePhase']),
     ]);
-    return res.documents.map(d => ({ sessionId: d.$id, date: d.date as string }));
+    return res.documents.map(d => ({
+      sessionId: d.$id,
+      date: d.date as string,
+      ...(d.cyclePhase ? { cyclePhase: d.cyclePhase as CyclePhase } : {}),
+    }));
   } catch (e) {
     console.warn('loadSessionDates failed:', e);
     return [];

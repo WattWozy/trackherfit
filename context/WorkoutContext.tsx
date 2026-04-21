@@ -10,6 +10,7 @@ import { computeProgressionSuggestions, type ProgressionSuggestion } from '@/lib
 import { DEFAULT_EXERCISES } from '@/lib/defaults';
 import { saveRoutine, loadRoutine } from '@/lib/storage';
 import { useAuth } from '@/context/AuthContext';
+import { useCycle } from '@/context/CycleContext';
 import {
   loadAllTemplates, saveTemplate, deleteTemplate as deleteTemplateDoc,
   createSession, completeSession, persistSessionSets, exerciseId,
@@ -265,6 +266,7 @@ const WorkoutContext = createContext<WorkoutContextValue | null>(null);
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { phase } = useCycle();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   // Session is created on the first set of a workout; its Appwrite $id lives here.
@@ -370,7 +372,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   function ensureSession(): Promise<string> {
     if (sessionIdRef.current) return Promise.resolve(sessionIdRef.current);
     if (!sessionCreateRef.current) {
-      sessionCreateRef.current = createSession(user.$id, 'My Workout')
+      sessionCreateRef.current = createSession(user.$id, 'My Workout', phase)
         .then(id => { sessionIdRef.current = id; setSessionId(id); return id; })
         .catch(e => { sessionCreateRef.current = null; throw e; });
     }

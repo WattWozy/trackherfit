@@ -52,6 +52,7 @@ export type DeltaMap = Record<string, ExerciseDelta>; // keyed by exerciseName
 export interface HistoryDate {
   date: string;
   sessionId: string;
+  cyclePhase?: CyclePhase;
 }
 
 export interface HistoryEntry {
